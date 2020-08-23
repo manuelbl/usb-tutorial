@@ -1,3 +1,13 @@
+#
+# USB Tutorial
+# 
+# Copyright (c) 2020 Manuel Bleichenbacher
+# Licensed under MIT License
+# https://opensource.org/licenses/MIT
+# 
+# Blink LED (from host)
+#
+
 import usb.core
 import time
 

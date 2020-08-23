@@ -19,8 +19,6 @@ static void usb_data_received(usbd_device *usbd_dev, uint8_t ep);
 
 usbd_device *usb_device;
 uint8_t usbd_control_buffer[256];
-uint8_t rx_buffer[256];
-int rx_buf_len = 0;
 
 void init()
 {
