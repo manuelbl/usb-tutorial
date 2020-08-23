@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{
+			"path": "blinky-libopencm3"
+		},
+		{
+			"path": "blinky-host"
+		}
+	],
+	"settings": {}
+}
