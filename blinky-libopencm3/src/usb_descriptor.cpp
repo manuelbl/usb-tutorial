@@ -18,7 +18,7 @@ static usbd_request_return_codes msft_feature_desc(usbd_device *usbd_dev, usb_se
 #define USB_PID 0xcafe        // Product ID
 #define USB_DEVICE_REL 0x0051 // release 0.5.1
 
-const char *usb_desc_strings[4] = {
+const char *const usb_desc_strings[4] = {
     "Tutorial",         //  USB Manufacturer
     "Blinky",           //  USB Product
     "0003",             //  Serial number

@@ -22,7 +22,7 @@
 #define INTF_COMM 0
 
 // USB descriptor string table
-extern const char *usb_desc_strings[4];
+extern const char *const usb_desc_strings[4];
 // USB device descriptor
 extern const struct usb_device_descriptor usb_device_desc;
 // USB device configurations
