@@ -56,6 +56,7 @@ void usb_init()
 
     // Set callback for config calls
     usbd_register_set_config_callback(usb_device, usb_set_config);
+    register_wcid_desc(usb_device);
 
     // Enable interrupt
     nvic_set_priority(NVIC_USB_LP_CAN_RX0_IRQ, 2 << 6);
@@ -66,6 +67,7 @@ void usb_init()
 void usb_set_config(usbd_device *usbd_dev, __attribute__((unused)) uint16_t wValue)
 {
     usbd_ep_setup(usbd_dev, EP_COMM_OUT, USB_ENDPOINT_ATTR_INTERRUPT, MAX_PACKET_SIZE, usb_data_received);
+    register_wcid_desc(usb_device);
 }
 
 // Called when data has been received
