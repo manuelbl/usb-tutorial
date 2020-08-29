@@ -20,9 +20,9 @@ static usbd_request_return_codes msft_feature_desc(usbd_device *usbd_dev, usb_se
 
 const char *const usb_desc_strings[4] = {
     "Tutorial",          //  USB Manufacturer
-    "Logging",           //  USB Product
+    "Logger",            //  USB Product
     "0004",              //  Serial number
-    "Logging Interface", //  Data interface
+    "Logger Interface",  //  Data interface
 };
 
 enum usb_strings_index
@@ -89,7 +89,7 @@ const struct usb_config_descriptor usb_config_desc[] = {
 const struct usb_device_descriptor usb_device_desc = {
     .bLength = USB_DT_DEVICE_SIZE,
     .bDescriptorType = USB_DT_DEVICE,
-    .bcdUSB = 0x0200,
+    .bcdUSB = 0x0200, // USB version 2.00
     .bDeviceClass = USB_CLASS_VENDOR,
     .bDeviceSubClass = 0,
     .bDeviceProtocol = 0, // no class specific protocol
