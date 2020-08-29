@@ -73,7 +73,8 @@ void usb_set_config(usbd_device *usbd_dev, __attribute__((unused)) uint16_t wVal
 {
     register_wcid_desc(usbd_dev);
     usbd_register_control_callback(usbd_dev,
-                                   USB_REQ_TYPE_VENDOR, USB_REQ_TYPE_TYPE,
+                                   USB_REQ_TYPE_VENDOR | USB_REQ_TYPE_INTERFACE,
+                                   USB_REQ_TYPE_TYPE | USB_REQ_TYPE_RECIPIENT,
                                    led_control);
 }
 
@@ -82,19 +83,26 @@ usbd_request_return_codes led_control(__attribute__((unused)) usbd_device *usbd_
                                       uint8_t **buf, uint16_t *len,
                                       __attribute__((unused)) usbd_control_complete_callback *complete)
 {
-    if (req->bRequest == LED_VENDOR_ID && req->wIndex == 1)
+    // The expected request format is (bmRequestType is filtered by callback registration):
+    // bmRequestType = 0x41 (data direction: host to device, type: vendor, recipient: interface)
+    // bmRequest: 0x33 (LED control request)
+    // wValue: 0 for LED off, 1 for LED on
+    // wIndex: 1 (interface number)
+    if (req->bRequest == LED_CONTROL_ID && req->wIndex == 1)
     {
         if (req->wValue == 0)
             gpio_clear(GPIOC, GPIO13);
         else
             gpio_set(GPIOC, GPIO13);
 
+        // no data in response
         *buf = nullptr;
         *len = 0;
 
         return USBD_REQ_HANDLED;
     }
 
+    // pass on to next request handler
     return USBD_REQ_NEXT_CALLBACK;
 }
 

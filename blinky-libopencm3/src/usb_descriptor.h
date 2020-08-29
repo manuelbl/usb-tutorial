@@ -18,7 +18,7 @@
 // Interface index
 #define INTF_COMM 0
 
-#define LED_VENDOR_ID 0x33
+#define LED_CONTROL_ID 0x33
 
 // USB descriptor string table
 extern const char *const usb_desc_strings[4];
