@@ -15,9 +15,14 @@
 #include <libopencm3/usb/usbd.h>
 
 static void usb_set_config(usbd_device *usbd_dev, uint16_t wValue);
-static void usb_data_received(usbd_device *usbd_dev, uint8_t ep);
+static usbd_request_return_codes led_control(usbd_device *usbd_dev, usb_setup_data *req,
+                                             uint8_t **buf, uint16_t *len,
+                                             usbd_control_complete_callback *complete);
 
+// USB device instance
 usbd_device *usb_device;
+
+// buffer for control requests
 uint8_t usbd_control_buffer[256];
 
 void init()
@@ -66,24 +71,31 @@ void usb_init()
 // Called when the host connects to the device and selects a configuration
 void usb_set_config(usbd_device *usbd_dev, __attribute__((unused)) uint16_t wValue)
 {
-    usbd_ep_setup(usbd_dev, EP_COMM_OUT, USB_ENDPOINT_ATTR_INTERRUPT, MAX_PACKET_SIZE, usb_data_received);
-    register_wcid_desc(usb_device);
+    register_wcid_desc(usbd_dev);
+    usbd_register_control_callback(usbd_dev,
+                                   USB_REQ_TYPE_VENDOR, USB_REQ_TYPE_TYPE,
+                                   led_control);
 }
 
-// Called when data has been received
-void usb_data_received(usbd_device *usbd_dev, uint8_t ep)
+// Called when a vendor request has been received
+usbd_request_return_codes led_control(__attribute__((unused)) usbd_device *usbd_dev, usb_setup_data *req,
+                                      uint8_t **buf, uint16_t *len,
+                                      __attribute__((unused)) usbd_control_complete_callback *complete)
 {
-    uint8_t buf[MAX_PACKET_SIZE];
-    uint16_t len = usbd_ep_read_packet(usbd_dev, ep, buf, sizeof(buf));
-
-    if (len == 2 && buf[0] == 1)
+    if (req->bRequest == LED_VENDOR_ID && req->wIndex == 1)
     {
-        uint8_t led_value = buf[1];
-        if (led_value)
+        if (req->wValue == 0)
             gpio_clear(GPIOC, GPIO13);
         else
             gpio_set(GPIOC, GPIO13);
+
+        *buf = nullptr;
+        *len = 0;
+
+        return USBD_REQ_HANDLED;
     }
+
+    return USBD_REQ_NEXT_CALLBACK;
 }
 
 int main()

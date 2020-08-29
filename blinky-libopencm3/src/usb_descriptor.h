@@ -15,11 +15,10 @@
 
 #define MAX_PACKET_SIZE 16
 
-// Endpoint number for commands from host to device
-#define EP_COMM_OUT 0x01
-
 // Interface index
 #define INTF_COMM 0
+
+#define LED_VENDOR_ID 0x33
 
 // USB descriptor string table
 extern const char *const usb_desc_strings[4];

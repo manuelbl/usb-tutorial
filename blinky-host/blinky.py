@@ -25,5 +25,5 @@ led_on = False
 
 while True:
     led_on = not led_on
-    dev.write(COMM_EP, bytes([0x01, int(led_on)]))
+    dev.ctrl_transfer(0x41, 0x33, int(led_on), 1)
     time.sleep(0.6)

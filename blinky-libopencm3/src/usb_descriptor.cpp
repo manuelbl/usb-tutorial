@@ -33,31 +33,18 @@ enum usb_strings_index
     USB_STRINGS_DATA_IF_ID,
 };
 
-static const struct usb_endpoint_descriptor comm_endpoint_desc[] = {
-    {
-        .bLength = USB_DT_ENDPOINT_SIZE,
-        .bDescriptorType = USB_DT_ENDPOINT,
-        .bEndpointAddress = EP_COMM_OUT,
-        .bmAttributes = USB_ENDPOINT_ATTR_INTERRUPT,
-        .wMaxPacketSize = MAX_PACKET_SIZE,
-        .bInterval = 1,
-        .extra = nullptr,
-        .extralen = 0,
-    },
-};
-
 static const struct usb_interface_descriptor comm_if_desc[] = {
     {
         .bLength = USB_DT_INTERFACE_SIZE,
         .bDescriptorType = USB_DT_INTERFACE,
         .bInterfaceNumber = INTF_COMM,
         .bAlternateSetting = 0,
-        .bNumEndpoints = sizeof(comm_endpoint_desc) / sizeof(comm_endpoint_desc[0]),
+        .bNumEndpoints = 0,
         .bInterfaceClass = USB_CLASS_VENDOR,
         .bInterfaceSubClass = 0,
         .bInterfaceProtocol = 0, // vendor specific
         .iInterface = USB_STRINGS_DATA_IF_ID,
-        .endpoint = comm_endpoint_desc,
+        .endpoint = nullptr,
         .extra = nullptr,
         .extralen = 0,
     },
