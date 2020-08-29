@@ -5,6 +5,12 @@
 		},
 		{
 			"path": "blinky-host"
+		},
+		{
+			"path": "logger-host"
+		},
+		{
+			"path": "logger-libopencm3"
 		}
 	],
 	"settings": {}
