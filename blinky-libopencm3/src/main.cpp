@@ -10,6 +10,7 @@
 
 #include "common.h"
 #include "usb_descriptor.h"
+#include "wcid.h"
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/usb/usbd.h>
