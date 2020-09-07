@@ -14,7 +14,7 @@
 #define USB_PID 0xcafe        // Product ID
 #define USB_DEVICE_REL 0x0051 // release 0.5.1
 
-const char *const usb_desc_strings[4] = {
+const char *const usb_desc_strings[] = {
     "Tutorial",         //  USB Manufacturer
     "Blinky",           //  USB Product
     "0003",             //  Serial number
@@ -29,7 +29,7 @@ enum usb_strings_index
     USB_STRINGS_DATA_IF_ID,
 };
 
-static const struct usb_interface_descriptor comm_if_desc[] = {
+static const struct usb_interface_descriptor comm_if_descs[] = {
     {
         .bLength = USB_DT_INTERFACE_SIZE,
         .bDescriptorType = USB_DT_INTERFACE,
@@ -49,13 +49,13 @@ static const struct usb_interface_descriptor comm_if_desc[] = {
 static const struct usb_interface usb_interfaces[] = {
     {
         .cur_altsetting = nullptr,
-        .num_altsetting = 1,
+        .num_altsetting = 0,
         .iface_assoc = nullptr,
-        .altsetting = comm_if_desc,
+        .altsetting = comm_if_descs,
     },
 };
 
-const struct usb_config_descriptor usb_config_desc[] = {
+const struct usb_config_descriptor usb_config_descs[] = {
     {
         .bLength = USB_DT_CONFIGURATION_SIZE,
         .bDescriptorType = USB_DT_CONFIGURATION,
@@ -72,7 +72,7 @@ const struct usb_config_descriptor usb_config_desc[] = {
 const struct usb_device_descriptor usb_device_desc = {
     .bLength = USB_DT_DEVICE_SIZE,
     .bDescriptorType = USB_DT_DEVICE,
-    .bcdUSB = 0x0200,
+    .bcdUSB = 0x0200, // USB version 2.0
     .bDeviceClass = USB_CLASS_VENDOR,
     .bDeviceSubClass = 0,
     .bDeviceProtocol = 0, // no class specific protocol
@@ -83,5 +83,5 @@ const struct usb_device_descriptor usb_device_desc = {
     .iManufacturer = USB_STRINGS_MANUFACTURER_ID,
     .iProduct = USB_STRINGS_PRODUCT_ID,
     .iSerialNumber = USB_STRINGS_SERIAL_NUMBER_ID,
-    .bNumConfigurations = sizeof(usb_config_desc) / sizeof(usb_config_desc[0]),
+    .bNumConfigurations = sizeof(usb_config_descs) / sizeof(usb_config_descs[0]),
 };

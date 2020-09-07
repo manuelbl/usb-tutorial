@@ -25,5 +25,5 @@ led_on = False
 
 while True:
     led_on = not led_on
-    dev.ctrl_transfer(bmRequestType=0x41, bRequest=0x33, wValue=int(led_on), wIndex=1)
+    dev.ctrl_transfer(bmRequestType=0x41, bRequest=0x33, wValue=int(led_on), wIndex=0)
     time.sleep(0.6)

@@ -25,6 +25,6 @@ extern const char *const usb_desc_strings[4];
 // USB device descriptor
 extern const struct usb_device_descriptor usb_device_desc;
 // USB device configurations
-extern const struct usb_config_descriptor usb_config_desc[];
+extern const struct usb_config_descriptor usb_config_descs[];
 
 #endif

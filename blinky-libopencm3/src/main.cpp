@@ -56,7 +56,7 @@ void usb_init()
     delay(80);
 
     // create USB device
-    usb_device = usbd_init(&st_usbfs_v1_usb_driver, &usb_device_desc, usb_config_desc,
+    usb_device = usbd_init(&st_usbfs_v1_usb_driver, &usb_device_desc, usb_config_descs,
                            usb_desc_strings, sizeof(usb_desc_strings) / sizeof(usb_desc_strings[0]),
                            usbd_control_buffer, sizeof(usbd_control_buffer));
 
@@ -88,8 +88,8 @@ usbd_request_return_codes led_control(__attribute__((unused)) usbd_device *usbd_
     // bmRequestType = 0x41 (data direction: host to device, type: vendor, recipient: interface)
     // bmRequest: 0x33 (LED control request)
     // wValue: 0 for LED off, 1 for LED on
-    // wIndex: 1 (interface number)
-    if (req->bRequest == LED_CONTROL_ID && req->wIndex == 1)
+    // wIndex: 0 (interface number)
+    if (req->bRequest == LED_CONTROL_ID && req->wIndex == 0)
     {
         if (req->wValue == 0)
             gpio_clear(GPIOC, GPIO13);
