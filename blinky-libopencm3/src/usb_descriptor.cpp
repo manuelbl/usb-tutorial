@@ -17,7 +17,7 @@
 const char *const usb_desc_strings[] = {
     "Tutorial",         //  USB Manufacturer
     "Blinky",           //  USB Product
-    "0003",             //  Serial number
+    "0004",             //  Serial number
     "Blinky Interface", //  Data interface
 };
 
@@ -49,7 +49,7 @@ static const struct usb_interface_descriptor comm_if_descs[] = {
 static const struct usb_interface usb_interfaces[] = {
     {
         .cur_altsetting = nullptr,
-        .num_altsetting = 0,
+        .num_altsetting = sizeof(comm_if_descs) / sizeof(comm_if_descs[0]),
         .iface_assoc = nullptr,
         .altsetting = comm_if_descs,
     },
