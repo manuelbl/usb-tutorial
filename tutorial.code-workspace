@@ -11,6 +11,9 @@
 		},
 		{
 			"path": "logger-libopencm3"
+		},
+		{
+			"path": "blinky-stm32cube"
 		}
 	],
 	"settings": {}

@@ -1,0 +1,173 @@
+/*
+ * USB Tutorial
+ * 
+ * Copyright (c) 2020 Manuel Bleichenbacher
+ * Licensed under MIT License
+ * https://opensource.org/licenses/MIT
+ * 
+ * USB device descriptor
+ */
+
+#include "usbd_core.h"
+#include "usbd_desc.h"
+#include "usbd_conf.h"
+#include "stm32f1xx_ll_utils.h"
+
+#define USBD_VID 0xcafe
+#define USBD_LANGID_STRING 1033
+#define USBD_MANUFACTURER_STRING "Tutorial"
+#define USBD_PID_FS 0xcafe
+#define USBD_PRODUCT_STRING_FS "Blinky"
+#define USBD_CONFIGURATION_STRING_FS "Blinky Config"
+#define USBD_INTERFACE_STRING_FS "Blinky Interface"
+#define USBD_DEV_RELESE 0x0051
+
+static void GetSerialNumber(void);
+static void IntToUnicode(uint32_t value, uint8_t *pbuf, uint8_t len);
+
+static uint8_t *GetDeviceDescriptor(USBD_SpeedTypeDef speed, uint16_t *length);
+static uint8_t *GetLangIDStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length);
+static uint8_t *GetManufacturerStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length);
+static uint8_t *GetProductStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length);
+static uint8_t *GetSerialStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length);
+static uint8_t *GetConfigurationStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length);
+static uint8_t *GetInterfaceStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length);
+
+USBD_DescriptorsTypeDef USBD_Descriptors =
+    {
+        GetDeviceDescriptor,
+        GetLangIDStrDescriptor,
+        GetManufacturerStrDescriptor,
+        GetProductStrDescriptor,
+        GetSerialStrDescriptor,
+        GetConfigurationStrDescriptor,
+        GetInterfaceStrDescriptor,
+};
+
+/* USB device descriptor. */
+static const __ALIGN_BEGIN uint8_t deviceDesc[USB_LEN_DEV_DESC] __ALIGN_END =
+    {
+        0x12,                 /* bLength */
+        USB_DESC_TYPE_DEVICE, /* bDescriptorType */
+        0x00,                 /* bcdUSB */
+        0x02,
+        0xff,                    /* bDeviceClass */
+        0x00,                    /* bDeviceSubClass */
+        0x00,                    /* bDeviceProtocol */
+        USB_MAX_EP0_SIZE,        /* bMaxPacketSize */
+        LOBYTE(USBD_VID),        /* idVendor */
+        HIBYTE(USBD_VID),        /* idVendor */
+        LOBYTE(USBD_PID_FS),     /* idProduct */
+        HIBYTE(USBD_PID_FS),     /* idProduct */
+        LOBYTE(USBD_DEV_RELESE), /* bcdDevice */
+        HIBYTE(USBD_DEV_RELESE),
+        USBD_IDX_MFC_STR,          /* Index of manufacturer string */
+        USBD_IDX_PRODUCT_STR,      /* Index of product string */
+        USBD_IDX_SERIAL_STR,       /* Index of serial number string */
+        USBD_MAX_NUM_CONFIGURATION /* bNumConfigurations */
+};
+
+/* USB lang indentifier descriptor. */
+static const __ALIGN_BEGIN uint8_t langIDDesc[USB_LEN_LANGID_STR_DESC] __ALIGN_END =
+    {
+        USB_LEN_LANGID_STR_DESC,
+        USB_DESC_TYPE_STRING,
+        LOBYTE(USBD_LANGID_STRING),
+        HIBYTE(USBD_LANGID_STRING),
+};
+
+/* Internal string descriptor. */
+__ALIGN_BEGIN uint8_t unicodeBuffer[USBD_MAX_STR_DESC_SIZ] __ALIGN_END;
+
+#define  USB_SIZ_STRING_SERIAL       0x1A
+
+static __ALIGN_BEGIN uint8_t serialStringDesc[USB_SIZ_STRING_SERIAL] __ALIGN_END = {
+    USB_SIZ_STRING_SERIAL,
+    USB_DESC_TYPE_STRING,
+};
+
+uint8_t *GetDeviceDescriptor(USBD_SpeedTypeDef speed, uint16_t *length)
+{
+    UNUSED(speed);
+    *length = sizeof(deviceDesc);
+    return (uint8_t *)deviceDesc;
+}
+
+uint8_t *GetLangIDStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length)
+{
+    UNUSED(speed);
+    *length = sizeof(langIDDesc);
+    return (uint8_t *)langIDDesc;
+}
+
+uint8_t *GetProductStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length)
+{
+    UNUSED(speed);
+    USBD_GetString((uint8_t *)USBD_PRODUCT_STRING_FS, unicodeBuffer, length);
+    return unicodeBuffer;
+}
+
+uint8_t *GetManufacturerStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length)
+{
+    UNUSED(speed);
+    USBD_GetString((uint8_t *)USBD_MANUFACTURER_STRING, unicodeBuffer, length);
+    return unicodeBuffer;
+}
+
+uint8_t *GetSerialStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length)
+{
+    UNUSED(speed);
+    *length = USB_SIZ_STRING_SERIAL;
+    GetSerialNumber();
+    return serialStringDesc;
+}
+
+uint8_t *GetConfigurationStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length)
+{
+    UNUSED(speed);
+    USBD_GetString((uint8_t *)USBD_CONFIGURATION_STRING_FS, unicodeBuffer, length);
+    return unicodeBuffer;
+}
+
+uint8_t *GetInterfaceStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length)
+{
+    UNUSED(speed);
+    USBD_GetString((uint8_t *)USBD_INTERFACE_STRING_FS, unicodeBuffer, length);
+    return unicodeBuffer;
+}
+
+static void GetSerialNumber(void)
+{
+    uint32_t id0 = LL_GetUID_Word0();
+    uint32_t id1 = LL_GetUID_Word1();
+    uint32_t id2 = LL_GetUID_Word2();
+
+    id0 += id2;
+
+    if (id0 != 0)
+    {
+        IntToUnicode(id0, &serialStringDesc[2], 8);
+        IntToUnicode(id1, &serialStringDesc[18], 4);
+    }
+}
+
+static void IntToUnicode(uint32_t value, uint8_t *pbuf, uint8_t len)
+{
+    uint8_t idx = 0;
+
+    for (idx = 0; idx < len; idx++)
+    {
+        if ((value >> 28) < 0xA)
+        {
+            pbuf[2 * idx] = (value >> 28) + '0';
+        }
+        else
+        {
+            pbuf[2 * idx] = (value >> 28) + 'A' - 10;
+        }
+
+        value = value << 4;
+
+        pbuf[2 * idx + 1] = 0;
+    }
+}
