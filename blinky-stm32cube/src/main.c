@@ -103,7 +103,6 @@ void HAL_MspInit(void)
     __HAL_AFIO_REMAP_SWJ_NOJTAG();
 }
 
-
 void Error_Handler(void)
 {
 }

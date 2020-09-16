@@ -72,7 +72,7 @@ void HAL_PCD_SuspendCallback(PCD_HandleTypeDef *hpcd)
 {
     /* Inform USB library that core enters in suspend Mode */
     USBD_LL_Suspend((USBD_HandleTypeDef *)hpcd->pData);
-    /* Enter in STOP mode */
+    /* Enter STOP mode */
     if (hpcd->Init.low_power_enable)
     {
         /* Set SLEEPDEEP bit and SleepOnExit of Cortex System Control Register */
@@ -220,9 +220,9 @@ uint32_t USBD_LL_GetRxDataSize(USBD_HandleTypeDef *pdev, uint8_t ep_addr)
     return HAL_PCD_EP_GetRxCount((PCD_HandleTypeDef *)pdev->pData, ep_addr);
 }
 
-void USBD_LL_Delay(uint32_t Delay)
+void USBD_LL_Delay(uint32_t delay)
 {
-    HAL_Delay(Delay);
+    HAL_Delay(delay);
 }
 
 USBD_StatusTypeDef USBD_Get_USB_Status(HAL_StatusTypeDef hal_status)

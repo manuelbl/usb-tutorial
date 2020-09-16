@@ -77,9 +77,9 @@ static const __ALIGN_BEGIN uint8_t langIDDesc[USB_LEN_LANGID_STR_DESC] __ALIGN_E
 };
 
 /* Internal string descriptor. */
-__ALIGN_BEGIN uint8_t unicodeBuffer[USBD_MAX_STR_DESC_SIZ] __ALIGN_END;
+__ALIGN_BEGIN uint8_t stringDescBuffer[USBD_MAX_STR_DESC_SIZ] __ALIGN_END;
 
-#define  USB_SIZ_STRING_SERIAL       0x1A
+#define USB_SIZ_STRING_SERIAL 0x1A
 
 static __ALIGN_BEGIN uint8_t serialStringDesc[USB_SIZ_STRING_SERIAL] __ALIGN_END = {
     USB_SIZ_STRING_SERIAL,
@@ -103,15 +103,15 @@ uint8_t *GetLangIDStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length)
 uint8_t *GetProductStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length)
 {
     UNUSED(speed);
-    USBD_GetString((uint8_t *)USBD_PRODUCT_STRING_FS, unicodeBuffer, length);
-    return unicodeBuffer;
+    USBD_GetString((uint8_t *)USBD_PRODUCT_STRING_FS, stringDescBuffer, length);
+    return stringDescBuffer;
 }
 
 uint8_t *GetManufacturerStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length)
 {
     UNUSED(speed);
-    USBD_GetString((uint8_t *)USBD_MANUFACTURER_STRING, unicodeBuffer, length);
-    return unicodeBuffer;
+    USBD_GetString((uint8_t *)USBD_MANUFACTURER_STRING, stringDescBuffer, length);
+    return stringDescBuffer;
 }
 
 uint8_t *GetSerialStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length)
@@ -125,15 +125,15 @@ uint8_t *GetSerialStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length)
 uint8_t *GetConfigurationStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length)
 {
     UNUSED(speed);
-    USBD_GetString((uint8_t *)USBD_CONFIGURATION_STRING_FS, unicodeBuffer, length);
-    return unicodeBuffer;
+    USBD_GetString((uint8_t *)USBD_CONFIGURATION_STRING_FS, stringDescBuffer, length);
+    return stringDescBuffer;
 }
 
 uint8_t *GetInterfaceStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length)
 {
     UNUSED(speed);
-    USBD_GetString((uint8_t *)USBD_INTERFACE_STRING_FS, unicodeBuffer, length);
-    return unicodeBuffer;
+    USBD_GetString((uint8_t *)USBD_INTERFACE_STRING_FS, stringDescBuffer, length);
+    return stringDescBuffer;
 }
 
 static void GetSerialNumber(void)
@@ -151,23 +151,16 @@ static void GetSerialNumber(void)
     }
 }
 
+const static char HEX_DIGITS[] = "0123456789ABCDEF";
+
 static void IntToUnicode(uint32_t value, uint8_t *pbuf, uint8_t len)
 {
     uint8_t idx = 0;
 
     for (idx = 0; idx < len; idx++)
     {
-        if ((value >> 28) < 0xA)
-        {
-            pbuf[2 * idx] = (value >> 28) + '0';
-        }
-        else
-        {
-            pbuf[2 * idx] = (value >> 28) + 'A' - 10;
-        }
-
+        pbuf[2 * idx] = HEX_DIGITS[value >> 28];
         value = value << 4;
-
         pbuf[2 * idx + 1] = 0;
     }
 }

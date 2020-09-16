@@ -16,6 +16,7 @@ static uint8_t USBD_Vendor_Init(USBD_HandleTypeDef *pdev, uint8_t cfgidx);
 static uint8_t USBD_Vendor_DeInit(USBD_HandleTypeDef *pdev, uint8_t cfgidx);
 static uint8_t USBD_Vendor_Setup(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req);
 static uint8_t *USBD_Vendor_GetConfigDesc(uint16_t *length);
+static uint8_t *USBD_Vendor_GetStringDesc(USBD_HandleTypeDef *pdev, uint8_t index, uint16_t *length);
 
 USBD_ClassTypeDef USBD_Vendor_Class =
     {
@@ -33,6 +34,7 @@ USBD_ClassTypeDef USBD_Vendor_Class =
         USBD_Vendor_GetConfigDesc,
         NULL,
         NULL,
+        USBD_Vendor_GetStringDesc,
 };
 
 #define CONFIG_DESC_SIZE 18U
@@ -64,17 +66,43 @@ __ALIGN_BEGIN static uint8_t Configuration_Desc[CONFIG_DESC_SIZE] __ALIGN_END =
                                  /* 18 */
 };
 
-static uint8_t USBD_Vendor_Init(USBD_HandleTypeDef *pdev, uint8_t cfgidx)
+#define WCID_VENDOR_CODE 0x37
+
+// Microsoft WCID string descriptor (string index 0xee)
+static const uint8_t msft_sig_desc[] = {
+    0x12,                           /* length = 18 bytes */
+    USB_DESC_TYPE_STRING,           /* descriptor type string */
+    'M', 0, 'S', 0, 'F', 0, 'T', 0, /* 'M', 'S', 'F', 'T' */
+    '1', 0, '0', 0, '0', 0,         /* '1', '0', '0' */
+    WCID_VENDOR_CODE,               /* vendor code */
+    0                               /* padding */
+};
+
+// Microsoft WCID feature descriptor (index 0x0004)
+static const uint8_t wcid_feature_desc[] = {
+    0x28, 0x00, 0x00, 0x00,                         /* length = 40 bytes */
+    0x00, 0x01,                                     /* version 1.0 (in BCD) */
+    0x04, 0x00,                                     /* compatibility descriptor index 0x0004 */
+    0x01,                                           /* number of sections */
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,       /* reserved (7 bytes) */
+    0x00,                                           /* interface number 0 */
+    0x01,                                           /* reserved */
+    0x57, 0x49, 0x4E, 0x55, 0x53, 0x42, 0x00, 0x00, /* Compatible ID "WINUSB\0\0" */
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* Subcompatible ID (unused) */
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00              /* reserved 6 bytes */
+};
+
+uint8_t USBD_Vendor_Init(USBD_HandleTypeDef *pdev, uint8_t cfgidx)
 {
     return USBD_OK;
 }
 
-static uint8_t USBD_Vendor_DeInit(USBD_HandleTypeDef *pdev, uint8_t cfgidx)
+uint8_t USBD_Vendor_DeInit(USBD_HandleTypeDef *pdev, uint8_t cfgidx)
 {
     return USBD_OK;
 }
 
-static uint8_t USBD_Vendor_Setup(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req)
+uint8_t USBD_Vendor_Setup(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req)
 {
     uint16_t status_info = 0U;
     USBD_StatusTypeDef ret = USBD_OK;
@@ -82,9 +110,18 @@ static uint8_t USBD_Vendor_Setup(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef 
     switch (req->bmRequest & USB_REQ_TYPE_MASK)
     {
     case USB_REQ_TYPE_VENDOR:
-        if (req->bRequest == LED_CONTROL_ID && req->wIndex == 0)
+        /* WCID feature request */
+        if (req->bRequest == WCID_VENDOR_CODE && req->wIndex == 0x0004)
         {
-            HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, req->wValue != 0 ? GPIO_PIN_SET : GPIO_PIN_RESET);
+            uint16_t len = sizeof(wcid_feature_desc);
+            if (len > req->wLength)
+                len = req->wLength;
+            USBD_CtlSendData(pdev, (uint8_t *)wcid_feature_desc, len);
+        }
+        /* LED command */
+        else if (req->bRequest == LED_CONTROL_ID && req->wIndex == 0)
+        {
+            HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, req->wValue == 0 ? GPIO_PIN_SET : GPIO_PIN_RESET);
         }
         else
         {
@@ -124,8 +161,23 @@ static uint8_t USBD_Vendor_Setup(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef 
     return ret;
 }
 
-static uint8_t *USBD_Vendor_GetConfigDesc(uint16_t *length)
+uint8_t *USBD_Vendor_GetConfigDesc(uint16_t *length)
 {
     *length = sizeof(Configuration_Desc);
     return Configuration_Desc;
+}
+
+static uint8_t *USBD_Vendor_GetStringDesc(USBD_HandleTypeDef *pdev, uint8_t index, uint16_t *length)
+{
+    if (index == 0xee)
+    {
+        *length = sizeof(msft_sig_desc);
+        return (uint8_t *)msft_sig_desc;
+    }
+    else
+    {
+        *length = 0;
+        USBD_CtlError(pdev, NULL);
+        return NULL;
+    }
 }
