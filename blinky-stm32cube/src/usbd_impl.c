@@ -5,7 +5,7 @@
  * Licensed under MIT License
  * https://opensource.org/licenses/MIT
  * 
- * Low level USB callbacks
+ * Low level USB implementation
  */
 
 #include "stm32f1xx.h"
@@ -17,7 +17,7 @@
 PCD_HandleTypeDef usb_pcd;
 void Error_Handler(void);
 
-static USBD_StatusTypeDef USBD_Get_USB_Status(HAL_StatusTypeDef hal_status);
+static USBD_StatusTypeDef Get_USB_Status(HAL_StatusTypeDef hal_status);
 
 void HAL_PCD_MspInit(PCD_HandleTypeDef *pcdHandle)
 {
@@ -136,7 +136,7 @@ USBD_StatusTypeDef USBD_LL_DeInit(USBD_HandleTypeDef *pdev)
 
     hal_status = HAL_PCD_DeInit(pdev->pData);
 
-    usb_status = USBD_Get_USB_Status(hal_status);
+    usb_status = Get_USB_Status(hal_status);
 
     return usb_status;
 }
@@ -144,43 +144,43 @@ USBD_StatusTypeDef USBD_LL_DeInit(USBD_HandleTypeDef *pdev)
 USBD_StatusTypeDef USBD_LL_Start(USBD_HandleTypeDef *pdev)
 {
     HAL_StatusTypeDef hal_status = HAL_PCD_Start(pdev->pData);
-    return USBD_Get_USB_Status(hal_status);
+    return Get_USB_Status(hal_status);
 }
 
 USBD_StatusTypeDef USBD_LL_Stop(USBD_HandleTypeDef *pdev)
 {
     HAL_StatusTypeDef hal_status = HAL_PCD_Stop(pdev->pData);
-    return USBD_Get_USB_Status(hal_status);
+    return Get_USB_Status(hal_status);
 }
 
 USBD_StatusTypeDef USBD_LL_OpenEP(USBD_HandleTypeDef *pdev, uint8_t ep_addr, uint8_t ep_type, uint16_t ep_mps)
 {
     HAL_StatusTypeDef hal_status = HAL_PCD_EP_Open(pdev->pData, ep_addr, ep_mps, ep_type);
-    return USBD_Get_USB_Status(hal_status);
+    return Get_USB_Status(hal_status);
 }
 
 USBD_StatusTypeDef USBD_LL_CloseEP(USBD_HandleTypeDef *pdev, uint8_t ep_addr)
 {
     HAL_StatusTypeDef hal_status = HAL_PCD_EP_Close(pdev->pData, ep_addr);
-    return USBD_Get_USB_Status(hal_status);
+    return Get_USB_Status(hal_status);
 }
 
 USBD_StatusTypeDef USBD_LL_FlushEP(USBD_HandleTypeDef *pdev, uint8_t ep_addr)
 {
     HAL_StatusTypeDef hal_status = HAL_PCD_EP_Flush(pdev->pData, ep_addr);
-    return USBD_Get_USB_Status(hal_status);
+    return Get_USB_Status(hal_status);
 }
 
 USBD_StatusTypeDef USBD_LL_StallEP(USBD_HandleTypeDef *pdev, uint8_t ep_addr)
 {
     HAL_StatusTypeDef hal_status = HAL_PCD_EP_SetStall(pdev->pData, ep_addr);
-    return USBD_Get_USB_Status(hal_status);
+    return Get_USB_Status(hal_status);
 }
 
 USBD_StatusTypeDef USBD_LL_ClearStallEP(USBD_HandleTypeDef *pdev, uint8_t ep_addr)
 {
     HAL_StatusTypeDef hal_status = HAL_PCD_EP_ClrStall(pdev->pData, ep_addr);
-    return USBD_Get_USB_Status(hal_status);
+    return Get_USB_Status(hal_status);
 }
 
 uint8_t USBD_LL_IsStallEP(USBD_HandleTypeDef *pdev, uint8_t ep_addr)
@@ -200,19 +200,19 @@ uint8_t USBD_LL_IsStallEP(USBD_HandleTypeDef *pdev, uint8_t ep_addr)
 USBD_StatusTypeDef USBD_LL_SetUSBAddress(USBD_HandleTypeDef *pdev, uint8_t dev_addr)
 {
     HAL_StatusTypeDef hal_status = HAL_PCD_SetAddress(pdev->pData, dev_addr);
-    return USBD_Get_USB_Status(hal_status);
+    return Get_USB_Status(hal_status);
 }
 
 USBD_StatusTypeDef USBD_LL_Transmit(USBD_HandleTypeDef *pdev, uint8_t ep_addr, uint8_t *pbuf, uint16_t size)
 {
     HAL_StatusTypeDef hal_status = HAL_PCD_EP_Transmit(pdev->pData, ep_addr, pbuf, size);
-    return USBD_Get_USB_Status(hal_status);
+    return Get_USB_Status(hal_status);
 }
 
 USBD_StatusTypeDef USBD_LL_PrepareReceive(USBD_HandleTypeDef *pdev, uint8_t ep_addr, uint8_t *pbuf, uint16_t size)
 {
     HAL_StatusTypeDef hal_status = HAL_PCD_EP_Receive(pdev->pData, ep_addr, pbuf, size);
-    return USBD_Get_USB_Status(hal_status);
+    return Get_USB_Status(hal_status);
 }
 
 uint32_t USBD_LL_GetRxDataSize(USBD_HandleTypeDef *pdev, uint8_t ep_addr)
@@ -225,7 +225,7 @@ void USBD_LL_Delay(uint32_t delay)
     HAL_Delay(delay);
 }
 
-USBD_StatusTypeDef USBD_Get_USB_Status(HAL_StatusTypeDef hal_status)
+USBD_StatusTypeDef Get_USB_Status(HAL_StatusTypeDef hal_status)
 {
     USBD_StatusTypeDef usb_status = USBD_OK;
 

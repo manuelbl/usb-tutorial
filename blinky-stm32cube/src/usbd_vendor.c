@@ -68,7 +68,7 @@ __ALIGN_BEGIN static uint8_t Configuration_Desc[CONFIG_DESC_SIZE] __ALIGN_END =
 
 #define WCID_VENDOR_CODE 0x37
 
-// Microsoft WCID string descriptor (string index 0xee)
+/* Microsoft WCID string descriptor (string index 0xee) */
 static const uint8_t msft_sig_desc[] = {
     0x12,                           /* length = 18 bytes */
     USB_DESC_TYPE_STRING,           /* descriptor type string */
@@ -78,7 +78,7 @@ static const uint8_t msft_sig_desc[] = {
     0                               /* padding */
 };
 
-// Microsoft WCID feature descriptor (index 0x0004)
+/* Microsoft WCID feature descriptor (index 0x0004) */
 static const uint8_t wcid_feature_desc[] = {
     0x28, 0x00, 0x00, 0x00,                         /* length = 40 bytes */
     0x00, 0x01,                                     /* version 1.0 (in BCD) */
@@ -104,6 +104,7 @@ uint8_t USBD_Vendor_DeInit(USBD_HandleTypeDef *pdev, uint8_t cfgidx)
 
 uint8_t USBD_Vendor_Setup(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req)
 {
+    /* Handle vendor control request */
     USBD_StatusTypeDef ret = USBD_OK;
 
     switch (req->bmRequest & USB_REQ_TYPE_MASK)
@@ -140,12 +141,14 @@ uint8_t USBD_Vendor_Setup(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req)
 
 uint8_t *USBD_Vendor_GetConfigDesc(uint16_t *length)
 {
+    /* Return configuration descriptor */
     *length = sizeof(Configuration_Desc);
     return Configuration_Desc;
 }
 
 static uint8_t *USBD_Vendor_GetStringDesc(USBD_HandleTypeDef *pdev, uint8_t index, uint16_t *length)
 {
+    /* Return Microsoft OS string descriptor for index 0xee */
     if (index == 0xee)
     {
         *length = sizeof(msft_sig_desc);

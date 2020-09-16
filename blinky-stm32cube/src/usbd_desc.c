@@ -47,20 +47,20 @@ USBD_DescriptorsTypeDef USBD_Descriptors =
 /* USB device descriptor. */
 static const __ALIGN_BEGIN uint8_t deviceDesc[USB_LEN_DEV_DESC] __ALIGN_END =
     {
-        0x12,                 /* bLength */
-        USB_DESC_TYPE_DEVICE, /* bDescriptorType */
-        0x00,                 /* bcdUSB */
-        0x02,
-        0xff,                    /* bDeviceClass */
-        0x00,                    /* bDeviceSubClass */
-        0x00,                    /* bDeviceProtocol */
-        USB_MAX_EP0_SIZE,        /* bMaxPacketSize */
-        LOBYTE(USBD_VID),        /* idVendor */
-        HIBYTE(USBD_VID),        /* idVendor */
-        LOBYTE(USBD_PID_FS),     /* idProduct */
-        HIBYTE(USBD_PID_FS),     /* idProduct */
-        LOBYTE(USBD_DEV_RELESE), /* bcdDevice */
-        HIBYTE(USBD_DEV_RELESE),
+        0x12,                      /* bLength */
+        USB_DESC_TYPE_DEVICE,      /* bDescriptorType */
+        0x00,                      /* bcdUSB = 2.00 */
+        0x02,                      /* */
+        0xff,                      /* bDeviceClass = vendor specific*/
+        0x00,                      /* bDeviceSubClass */
+        0x00,                      /* bDeviceProtocol = vendor specific */
+        USB_MAX_EP0_SIZE,          /* bMaxPacketSize */
+        LOBYTE(USBD_VID),          /* idVendor */
+        HIBYTE(USBD_VID),          /* */
+        LOBYTE(USBD_PID_FS),       /* idProduct */
+        HIBYTE(USBD_PID_FS),       /* */
+        LOBYTE(USBD_DEV_RELESE),   /* bcdDevice */
+        HIBYTE(USBD_DEV_RELESE),   /* */
         USBD_IDX_MFC_STR,          /* Index of manufacturer string */
         USBD_IDX_PRODUCT_STR,      /* Index of product string */
         USBD_IDX_SERIAL_STR,       /* Index of serial number string */
