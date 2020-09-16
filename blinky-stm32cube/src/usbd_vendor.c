@@ -104,7 +104,6 @@ uint8_t USBD_Vendor_DeInit(USBD_HandleTypeDef *pdev, uint8_t cfgidx)
 
 uint8_t USBD_Vendor_Setup(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req)
 {
-    uint16_t status_info = 0U;
     USBD_StatusTypeDef ret = USBD_OK;
 
     switch (req->bmRequest & USB_REQ_TYPE_MASK)
@@ -127,28 +126,6 @@ uint8_t USBD_Vendor_Setup(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req)
         {
             USBD_CtlError(pdev, req);
             ret = USBD_FAIL;
-        }
-        break;
-
-    case USB_REQ_TYPE_STANDARD:
-        switch (req->bRequest)
-        {
-        case USB_REQ_GET_STATUS:
-            if (pdev->dev_state == USBD_STATE_CONFIGURED)
-            {
-                USBD_CtlSendData(pdev, (uint8_t *)(void *)&status_info, 2U);
-            }
-            else
-            {
-                USBD_CtlError(pdev, req);
-                ret = USBD_FAIL;
-            }
-            break;
-
-        default:
-            USBD_CtlError(pdev, req);
-            ret = USBD_FAIL;
-            break;
         }
         break;
 
