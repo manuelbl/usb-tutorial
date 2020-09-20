@@ -17,6 +17,9 @@
 		},
 		{
 			"path": "tft-libopencm3"
+		},
+		{
+			"path": "tft-host"
 		}
 	],
 	"settings": {}
