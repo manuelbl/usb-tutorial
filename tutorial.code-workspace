@@ -1,24 +1,31 @@
 {
 	"folders": [
 		{
+			"name": "blinky-libopencm3",
 			"path": "blinky-libopencm3"
 		},
 		{
-			"path": "blinky-host"
-		},
-		{
-			"path": "logger-host"
-		},
-		{
-			"path": "logger-libopencm3"
-		},
-		{
+			"name": "blinky-stm32cube",
 			"path": "blinky-stm32cube"
 		},
 		{
+			"name": "blinky-host",
+			"path": "blinky-host"
+		},
+		{
+			"name": "logger-libopencm3",
+			"path": "logger-libopencm3"
+		},
+		{
+			"name": "logger-host",
+			"path": "logger-host"
+		},
+		{
+			"name": "tft-libopencm3",
 			"path": "tft-libopencm3"
 		},
 		{
+			"name": "tft-host",
 			"path": "tft-host"
 		}
 	],

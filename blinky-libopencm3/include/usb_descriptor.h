@@ -27,4 +27,6 @@ extern const struct usb_device_descriptor usb_device_desc;
 // USB device configurations
 extern const struct usb_config_descriptor usb_config_descs[];
 
+void usb_init_serial_num();
+
 #endif

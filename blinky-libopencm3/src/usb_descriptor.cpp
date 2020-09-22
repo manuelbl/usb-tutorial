@@ -9,15 +9,20 @@
  */
 
 #include "usb_descriptor.h"
+#include <libopencm3/stm32/desig.h>
+
+static void put_hex(uint32_t value, char *buf, int len);
 
 #define USB_VID 0xcafe        // Vendor ID
 #define USB_PID 0xcafe        // Product ID
 #define USB_DEVICE_REL 0x0051 // release 0.5.1
 
+static char serial_num[13];
+
 const char *const usb_desc_strings[] = {
     "Tutorial",         //  USB Manufacturer
     "Blinky",           //  USB Product
-    "0004",             //  Serial number
+    serial_num,         //  Serial number
     "Blinky Interface", //  Data interface
 };
 
@@ -85,3 +90,27 @@ const struct usb_device_descriptor usb_device_desc = {
     .iSerialNumber = USB_STRINGS_SERIAL_NUMBER_ID,
     .bNumConfigurations = sizeof(usb_config_descs) / sizeof(usb_config_descs[0]),
 };
+
+void usb_init_serial_num()
+{
+    uint32_t id0 = DESIG_UNIQUE_ID0;
+    uint32_t id1 = DESIG_UNIQUE_ID1;
+    uint32_t id2 = DESIG_UNIQUE_ID2;
+
+    id0 += id2;
+
+    put_hex(id0, serial_num, 8);
+    put_hex(id1, serial_num + 8, 4);
+    serial_num[12] = 0;
+}
+
+const static char HEX_DIGITS[] = "0123456789ABCDEF";
+
+void put_hex(uint32_t value, char *buf, int len)
+{
+    for (int idx = 0; idx < len; idx++)
+    {
+        buf[idx] = HEX_DIGITS[value >> 28];
+        value = value << 4;
+    }
+}
