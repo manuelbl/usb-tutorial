@@ -25,6 +25,10 @@
 			"path": "tft-libopencm3"
 		},
 		{
+			"name": "tft-stm32cube",
+			"path": "tft-stm32cube"
+		},
+		{
 			"name": "tft-host",
 			"path": "tft-host"
 		}
