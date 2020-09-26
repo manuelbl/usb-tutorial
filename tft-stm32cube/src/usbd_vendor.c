@@ -13,6 +13,7 @@
 #include "usbd_ctlreq.h"
 
 static uint8_t USBD_Vendor_Init(USBD_HandleTypeDef *pdev, uint8_t cfgidx);
+static uint8_t USBD_Vendor_DeInit(USBD_HandleTypeDef *pdev, uint8_t cfgidx);
 static uint8_t USBD_Vendor_Setup(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req);
 static uint8_t *USBD_Vendor_GetConfigDesc(uint16_t *length);
 static uint8_t *USBD_Vendor_GetStringDesc(USBD_HandleTypeDef *pdev, uint8_t index, uint16_t *length);
@@ -23,7 +24,7 @@ static uint8_t data_packet[DATA_PACKET_SIZE];
 USBD_ClassTypeDef USBD_Vendor_Class =
     {
         USBD_Vendor_Init,
-        NULL,
+        USBD_Vendor_DeInit,
         USBD_Vendor_Setup,
         NULL, /* EP0_TxSent */
         NULL, /* EP0_RxReady */
@@ -107,9 +108,19 @@ static const uint8_t wcid_feature_desc[] = {
 
 uint8_t USBD_Vendor_Init(USBD_HandleTypeDef *pdev, uint8_t cfgidx)
 {
-    /* Open EP IN */
+    /* open bulk endpoint */
     USBD_LL_OpenEP(pdev, DATA_OUT_EP, USBD_EP_TYPE_BULK, DATA_PACKET_SIZE);
+
+    /* Enable it to receive data (NAK -> VALID) */
     USBD_LL_PrepareReceive(pdev, DATA_OUT_EP, data_packet, sizeof(data_packet));
+
+    return USBD_OK;
+}
+
+uint8_t USBD_Vendor_DeInit(USBD_HandleTypeDef *pdev, uint8_t cfgidx)
+{
+    /* close bulk end point */
+    USBD_LL_CloseEP(pdev, DATA_OUT_EP);
 
     return USBD_OK;
 }
@@ -183,4 +194,3 @@ void usb_continue_rx(USBD_HandleTypeDef *pdev)
 {
     USBD_LL_PrepareReceive(pdev, DATA_OUT_EP, data_packet, sizeof(data_packet));
 }
-
