@@ -9,7 +9,6 @@
 #
 
 import usb.core
-import time
 import struct
 
 COMM_EP = 1
