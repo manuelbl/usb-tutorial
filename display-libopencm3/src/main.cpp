@@ -9,7 +9,7 @@
  */
 
 #include "common.h"
-#include "tft.h"
+#include "display.h"
 #include "usb_descriptor.h"
 #include "wcid.h"
 #include <libopencm3/stm32/gpio.h>
@@ -179,7 +179,7 @@ int main()
 {
     init();
     usb_init();
-    tft_init();
+    display_init();
 
     int y = 0;
 
@@ -189,8 +189,8 @@ int main()
         if (!circ_buf_has_data(ROW_LEN))
             continue;
 
-        // draw line
-        tft_draw(0, y, 128, 1, pixel_buf + buf_tail);
+        // draw pixel line
+        display_draw(0, y, 128, 1, pixel_buf + buf_tail);
 
         y++;
         if (y == 160)

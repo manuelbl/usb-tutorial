@@ -8,14 +8,14 @@
  * Color TFT display
  */
 
-#ifndef TFT_H
-#define TFT_H
+#ifndef DISPLAY_H
+#define DISPLAY_H
 
 // Initialize TFT display 
-void tft_init();
+void display_init();
 
 // Draw pixelmap (RGB565 format)
-void tft_draw(int x, int y, int row_len, int num_rows, const uint8_t* pixels);
+void display_draw(int x, int y, int row_len, int num_rows, const uint8_t* pixels);
 
 
 #endif

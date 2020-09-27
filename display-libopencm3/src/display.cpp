@@ -8,14 +8,17 @@
  * Color TFT display (ST7735)
  */
 
-#include "tft.h"
-#include "stm32f1xx_hal.h"
+#include "common.h"
+#include "display.h"
+#include <libopencm3/stm32/gpio.h>
+#include <libopencm3/stm32/rcc.h>
+#include <libopencm3/stm32/spi.h>
 
-#define MOSI_PIN GPIO_PIN_7
-#define SCK_PIN GPIO_PIN_5
-#define DC_PIN GPIO_PIN_3
-#define RESET_PIN GPIO_PIN_2
-#define CS_PIN GPIO_PIN_1
+#define MOSI_PIN GPIO7
+#define SCK_PIN GPIO5
+#define DC_PIN GPIO3
+#define RESET_PIN GPIO2
+#define CS_PIN GPIO1
 
 #define CMD_NOP 0x00
 #define CMD_SWRESET 0x01
@@ -102,51 +105,26 @@ static const uint8_t init_data[] = {
     CMD_EOS                                             /* end of sequence */
 };
 
-static SPI_HandleTypeDef hspi;
-
 static void reset();
 static void init_seq();
 static void send_cmd(uint8_t cmd, int len, const uint8_t *buf);
 
-void HAL_SPI_MspInit(SPI_HandleTypeDef* hspi)
+void display_init()
 {
-    GPIO_InitTypeDef GPIO_InitStruct = {0};
-    if(hspi->Instance==SPI1)
-    {
-        __HAL_RCC_SPI1_CLK_ENABLE();
+    // MOSI = PA7, SCK = PA5
+    gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, MOSI_PIN | SCK_PIN);
 
-        GPIO_InitStruct.Pin = SCK_PIN|MOSI_PIN;
-        GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-        GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-        GPIO_InitStruct.Pull = GPIO_NOPULL;
-        HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-    }
-}
-
-void tft_init()
-{
     // DC = PA3, RESET = PA2, CS = PA1
-    HAL_GPIO_WritePin(GPIOA, DC_PIN | RESET_PIN | CS_PIN, GPIO_PIN_SET);
-    GPIO_InitTypeDef GPIO_InitStruct = {0};
-    GPIO_InitStruct.Pin = DC_PIN | RESET_PIN | CS_PIN;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+    gpio_set(GPIOA, DC_PIN | RESET_PIN | CS_PIN);
+    gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, DC_PIN | RESET_PIN | CS_PIN);
 
-    hspi.Instance = SPI1;
-    hspi.Init.Mode = SPI_MODE_MASTER;
-    hspi.Init.Direction = SPI_DIRECTION_2LINES;
-    hspi.Init.DataSize = SPI_DATASIZE_8BIT;
-    hspi.Init.CLKPolarity = SPI_POLARITY_LOW;
-    hspi.Init.CLKPhase = SPI_PHASE_1EDGE;
-    hspi.Init.NSS = SPI_NSS_SOFT;
-    hspi.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_32;
-    hspi.Init.FirstBit = SPI_FIRSTBIT_MSB;
-    hspi.Init.TIMode = SPI_TIMODE_DISABLE;
-    hspi.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
-    hspi.Init.CRCPolynomial = 10;
-    HAL_SPI_Init(&hspi);
+    // Initialize SPI
+    spi_reset(SPI1);
+    spi_init_master(SPI1, SPI_CR1_BAUDRATE_FPCLK_DIV_32, SPI_CR1_CPOL_CLK_TO_0_WHEN_IDLE,
+                    SPI_CR1_CPHA_CLK_TRANSITION_1, SPI_CR1_DFF_8BIT, SPI_CR1_MSBFIRST);
+    spi_enable_software_slave_management(SPI1);
+    spi_set_nss_high(SPI1);
+    spi_enable(SPI1);
 
     reset();
     init_seq();
@@ -154,13 +132,13 @@ void tft_init()
 
 void reset()
 {
-    HAL_GPIO_WritePin(GPIOA, CS_PIN, GPIO_PIN_RESET);
-    HAL_Delay(500);
-    HAL_GPIO_WritePin(GPIOA, RESET_PIN, GPIO_PIN_RESET);
-    HAL_Delay(500);
-    HAL_GPIO_WritePin(GPIOA, RESET_PIN, GPIO_PIN_SET);
-    HAL_Delay(500);
-    HAL_GPIO_WritePin(GPIOA, CS_PIN, GPIO_PIN_SET);
+    gpio_clear(GPIOA, CS_PIN);
+    delay(500);
+    gpio_clear(GPIOA, RESET_PIN);
+    delay(500);
+    gpio_set(GPIOA, RESET_PIN);
+    delay(500);
+    gpio_set(GPIOA, CS_PIN);
 }
 
 void init_seq()
@@ -172,7 +150,7 @@ void init_seq()
         uint8_t val = *p++;
         if (cmd == CMD_SLEEP)
         {
-            HAL_Delay(val);
+            delay(val);
         }
         else
         {
@@ -186,22 +164,25 @@ void init_seq()
 void send_cmd(uint8_t cmd, int len, const uint8_t *buf)
 {
     // select command mode
-    HAL_GPIO_WritePin(GPIOA, DC_PIN, GPIO_PIN_RESET);
+    gpio_clear(GPIOA, DC_PIN);
 
     // select chip
-    HAL_GPIO_WritePin(GPIOA, CS_PIN, GPIO_PIN_RESET);
+    gpio_clear(GPIOA, CS_PIN);
 
     // send command
-    HAL_SPI_Transmit(&hspi, &cmd, 1, 100);
+    spi_xfer(SPI1, cmd);
 
     // select data mode
-    HAL_GPIO_WritePin(GPIOA, DC_PIN, GPIO_PIN_SET);
+    gpio_set(GPIOA, DC_PIN);
 
     // send data
-    HAL_SPI_Transmit(&hspi, (uint8_t*)buf, len, 100);
+    for (int i = 0; i < len; i++)
+    {
+        spi_xfer(SPI1, buf[i]);
+    }
 
     // deselect chip
-    HAL_GPIO_WritePin(GPIOA, CS_PIN, GPIO_PIN_SET);
+    gpio_set(GPIOA, CS_PIN);
 }
 
 void set_address_window(int x, int y, int w, int h)
@@ -215,7 +196,7 @@ void set_address_window(int x, int y, int w, int h)
     send_cmd(CMD_RASET, 4, param);
 }
 
-void tft_draw(int x, int y, int row_len, int num_rows, const uint8_t *pixels)
+void display_draw(int x, int y, int row_len, int num_rows, const uint8_t *pixels)
 {
     set_address_window(x, y, row_len, num_rows);
     send_cmd(CMD_RAMWR, row_len * num_rows * 2, pixels);

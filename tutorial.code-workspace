@@ -21,16 +21,16 @@
 			"path": "logger-host"
 		},
 		{
-			"name": "tft-libopencm3",
-			"path": "tft-libopencm3"
+			"name": "display-libopencm3",
+			"path": "display-libopencm3"
 		},
 		{
-			"name": "tft-stm32cube",
-			"path": "tft-stm32cube"
+			"name": "display-stm32cube",
+			"path": "display-stm32cube"
 		},
 		{
-			"name": "tft-host",
-			"path": "tft-host"
+			"name": "display-host",
+			"path": "display-host"
 		}
 	],
 	"settings": {}

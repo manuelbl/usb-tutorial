@@ -9,7 +9,7 @@
  */
 
 #include "main.h"
-#include "tft.h"
+#include "display.h"
 #include "usbd_desc.h"
 #include "usbd_vendor.h"
 #include <stdbool.h>
@@ -47,7 +47,7 @@ int main(void)
     SystemClock_Config();
     GPIO_Init();
     USB_Device_Init();
-    tft_init();
+    display_init();
 
     int y = 0;
 
@@ -58,7 +58,7 @@ int main(void)
             continue;
 
         // draw line
-        tft_draw(0, y, 128, 1, pixel_buf + buf_tail);
+        display_draw(0, y, 128, 1, pixel_buf + buf_tail);
 
         y++;
         if (y == 160)
