@@ -9,7 +9,6 @@
 #
 
 import usb.core
-import time
 from PIL import Image
 
 def rgb888_to_rgb565(r, g, b):
