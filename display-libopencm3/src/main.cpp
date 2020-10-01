@@ -37,9 +37,8 @@ static constexpr int MIN_FREE_SPACE = 2 * BULK_MAX_PACKET_SIZE;
 
 static constexpr int ROW_LEN = 256; /* 128 pixels x 2 byte = 256 bytes */
 
-
 // indicates if the endpoint is forced to NAK to prevent receiving further data
-static volatile bool forced_nak = false;
+static volatile bool is_forced_nak = false;
 
 void init()
 {
@@ -86,6 +85,9 @@ void usb_set_config(usbd_device *usbd_dev, __attribute__((unused)) uint16_t wVal
 {
     register_wcid_desc(usbd_dev);
     usbd_ep_setup(usbd_dev, EP_DATA_OUT, USB_ENDPOINT_ATTR_BULK, BULK_MAX_PACKET_SIZE, usb_data_received);
+
+    buffer.reset();
+    is_forced_nak = false;
 }
 
 // Called when data has been received
@@ -95,15 +97,15 @@ void usb_data_received(__attribute__((unused)) usbd_device *usbd_dev, __attribut
     uint8_t packet[BULK_MAX_PACKET_SIZE] __attribute__((aligned(4)));
     int len = usbd_ep_read_packet(usb_device, EP_DATA_OUT, packet, sizeof(packet));
 
-    // copy data into circular buffer 
+    // copy data into circular buffer
     buffer.add_data(packet, len);
 
     // check if there is space for less than 2 packets
-    if (!forced_nak && buffer.avail_size() < MIN_FREE_SPACE)
+    if (!is_forced_nak && buffer.avail_size() < MIN_FREE_SPACE)
     {
         // set endpoint from VALID to NAK
         usbd_ep_nak_set(usbd_dev, EP_DATA_OUT, 1);
-        forced_nak = true;
+        is_forced_nak = true;
     }
 }
 
@@ -111,10 +113,10 @@ void usb_data_received(__attribute__((unused)) usbd_device *usbd_dev, __attribut
 void usb_update_nak()
 {
     // can be set from NAK to VALID if there is space for 2 more packets
-    if (forced_nak && buffer.avail_size() >= MIN_FREE_SPACE)
+    if (is_forced_nak && buffer.avail_size() >= MIN_FREE_SPACE)
     {
         usbd_ep_nak_set(usb_device, EP_DATA_OUT, 0);
-        forced_nak = false;
+        is_forced_nak = false;
     }
 }
 

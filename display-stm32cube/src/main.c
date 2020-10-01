@@ -8,38 +8,22 @@
  * Main program
  */
 
-#include "main.h"
+#include "circ_buf.h"
 #include "display.h"
+#include "main.h"
 #include "usbd_desc.h"
 #include "usbd_vendor.h"
-#include <stdbool.h>
-#include <string.h>
 
 static void SystemClock_Config(void);
 static void GPIO_Init(void);
 static void USB_Device_Init(void);
-static bool circ_buf_has_data(int len);
-static bool circ_buf_has_avail(int len);
 static void usb_check_stop();
 
-USBD_HandleTypeDef USBD_Device;
+static USBD_HandleTypeDef USBD_Device;
 
-/* Circular buffer for data: */
 #define ROW_LEN 256 /* 128 pixels x 2 byte = 256 bytes */
-#define NUM_ROWS 4
-#define BUF_SIZE (ROW_LEN * NUM_ROWS)
 
-uint8_t pixel_buf[BUF_SIZE];
-
-/* 0 <= head < BUF_SIZE
- * 0 <= tail < BUF_SIZE
- * head == tail: buffer is empty
- * Therefore, the buffer must never be filled completely. */
-volatile int buf_head = 0; /* updated by USB callbacks */
-volatile int buf_tail = 0; /* updated by TFT display functions */
-
-volatile bool is_rx_stopped = false;
-
+static volatile bool is_rx_stopped = false;
 
 int main(void)
 {
@@ -54,21 +38,17 @@ int main(void)
     while (1)
     {
         // check for sufficient data for entire line
-        if (!circ_buf_has_data(ROW_LEN))
+        if (circ_buf_data_size() < ROW_LEN)
             continue;
 
         // draw line
-        display_draw(0, y, 128, 1, pixel_buf + buf_tail);
+        uint8_t row[ROW_LEN];
+        circ_buf_get_data(row, ROW_LEN);
+        display_draw(0, y, 128, 1, row);
 
         y++;
         if (y == 160)
             y = 0;
-
-        // update tail of circular buffer
-        int tail = buf_tail + ROW_LEN;
-        if (tail >= BUF_SIZE)
-            tail -= BUF_SIZE;
-        buf_tail = tail;
 
         usb_check_stop();
     }
@@ -76,34 +56,19 @@ int main(void)
 
 void usb_check_stop()
 {
-    if (is_rx_stopped && circ_buf_has_avail(DATA_PACKET_SIZE))
+    if (is_rx_stopped && circ_buf_avail_size() >= DATA_PACKET_SIZE)
     {
         usb_continue_rx(&USBD_Device);
         is_rx_stopped = false;
     }
 }
 
-bool usb_data_received(uint8_t* buf, int len)
+bool usb_data_received(uint8_t *buf, int len)
 {
-    int head = buf_head;
+    // add recievied data to circular buffer
+    circ_buf_add_data(buf, len);
 
-    // copy first part (from head to end of circular buffer)
-    int n = len;
-    if (n > BUF_SIZE - head)
-        n = BUF_SIZE - head;
-    memcpy(pixel_buf + head, buf, n);
-
-    // copy second part if needed (to start of circular buffer)
-    if (n < len)
-        memcpy(pixel_buf, buf + n, len - n);
-
-    // update head
-    head += len;
-    if (head >= BUF_SIZE)
-        head -= BUF_SIZE;
-    buf_head = head;
-
-    bool has_space = circ_buf_has_avail(DATA_PACKET_SIZE);
+    bool has_space = circ_buf_avail_size() >= DATA_PACKET_SIZE;
     if (!has_space)
         is_rx_stopped = true;
     return has_space;
@@ -174,36 +139,4 @@ void HAL_MspInit(void)
 
 void Error_Handler(void)
 {
-}
-
-/* Returns if there are at least `len` bytes of data in buffer */
-bool circ_buf_has_data(int len)
-{
-    int head = buf_head;
-    int tail = buf_tail;
-
-    if (head >= tail)
-    {
-        return (head - tail) >= len;
-    }
-    else
-    {
-        return (BUF_SIZE - (tail - head)) >= len;
-    }
-}
-
-/* Returns if there is space of at least `len` bytes to add new data */
-bool circ_buf_has_avail(int len)
-{
-    int head = buf_head;
-    int tail = buf_tail;
-
-    if (head >= tail)
-    {
-        return (BUF_SIZE - (head - tail)) > len;
-    }
-    else
-    {
-        return (tail - head) > len;
-    }
 }

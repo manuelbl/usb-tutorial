@@ -11,7 +11,6 @@
 #ifndef CIRC_BUF_H
 #define CIRC_BUF_H
 
-#include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 #include <algorithm>
@@ -68,7 +67,6 @@ public:
     /// Resets (empties) the circular buffer
     void reset();
 };
-
 
 template <int N>
 circ_buf<N>::circ_buf()
