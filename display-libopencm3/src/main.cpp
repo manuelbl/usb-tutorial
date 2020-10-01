@@ -8,6 +8,7 @@
  * Main program
  */
 
+#include "circ_buf.h"
 #include "common.h"
 #include "display.h"
 #include "usb_descriptor.h"
@@ -19,33 +20,26 @@
 #include <string.h>
 
 static void usb_set_config(usbd_device *usbd_dev, uint16_t wValue);
-void usb_data_received(usbd_device *usbd_dev, uint8_t ep);
-bool circ_buf_has_data(int len);
-bool circ_buf_has_avail(int len);
-void usb_copy_received_packet();
+static void usb_data_received(usbd_device *usbd_dev, uint8_t ep);
+static void usb_update_nak();
 
 // USB device instance
-usbd_device *usb_device;
+static usbd_device *usb_device;
 
 // buffer for control requests
-uint8_t usbd_control_buffer[256];
+static uint8_t usbd_control_buffer[256];
 
-// Circular buffer for data:
-#define ROW_LEN 256 // 128 pixels x 2 byte = 256 bytes
-#define NUM_ROWS 4
-#define BUF_SIZE (ROW_LEN * NUM_ROWS)
+// Circular buffer for data
+static circ_buf<1024> buffer;
 
-uint8_t pixel_buf[BUF_SIZE];
+// Minimum free space in circular buffer for requesting more packets
+static constexpr int MIN_FREE_SPACE = 2 * BULK_MAX_PACKET_SIZE;
 
-// 0 <= head < BUF_SIZE
-// 0 <= tail < BUF_SIZE
-// head == tail: buffer is empty
-// Therefore, the buffer must never be filled completely.
-volatile int buf_head = 0; // updated by USB callbacks
-volatile int buf_tail = 0; // updated by TFT display functions
+static constexpr int ROW_LEN = 256; /* 128 pixels x 2 byte = 256 bytes */
+
 
 // indicates if the endpoint is forced to NAK to prevent receiving further data
-volatile bool forced_nak = false;
+static volatile bool forced_nak = false;
 
 void init()
 {
@@ -67,7 +61,6 @@ void usb_init()
     rcc_periph_reset_pulse(RST_USB);
 
     // Pull USB D+ (A12) low for 80ms to trigger device reenumeration
-    // (hack for boards without proper USB pull up control)
     gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_10_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, GPIO12);
     gpio_clear(GPIOA, GPIO12);
     delay(80);
@@ -92,86 +85,36 @@ void usb_init()
 void usb_set_config(usbd_device *usbd_dev, __attribute__((unused)) uint16_t wValue)
 {
     register_wcid_desc(usbd_dev);
-
     usbd_ep_setup(usbd_dev, EP_DATA_OUT, USB_ENDPOINT_ATTR_BULK, BULK_MAX_PACKET_SIZE, usb_data_received);
-    register_wcid_desc(usb_device);
 }
 
 // Called when data has been received
 void usb_data_received(__attribute__((unused)) usbd_device *usbd_dev, __attribute__((unused)) uint8_t ep)
 {
-    // copy data into circular buffer
-    usb_copy_received_packet();
+    // Retrieve USB data (has side effect of setting endpoint to VALID)
+    uint8_t packet[BULK_MAX_PACKET_SIZE] __attribute__((aligned(4)));
+    int len = usbd_ep_read_packet(usb_device, EP_DATA_OUT, packet, sizeof(packet));
 
-    if (!forced_nak && !circ_buf_has_avail(2 * BULK_MAX_PACKET_SIZE))
+    // copy data into circular buffer 
+    buffer.add_data(packet, len);
+
+    // check if there is space for less than 2 packets
+    if (!forced_nak && buffer.avail_size() < MIN_FREE_SPACE)
     {
+        // set endpoint from VALID to NAK
         usbd_ep_nak_set(usbd_dev, EP_DATA_OUT, 1);
         forced_nak = true;
     }
 }
 
+// Check if endpoints can be reset from NAK to VALID
 void usb_update_nak()
 {
-    if (forced_nak && circ_buf_has_avail(2 * BULK_MAX_PACKET_SIZE))
+    // can be set from NAK to VALID if there is space for 2 more packets
+    if (forced_nak && buffer.avail_size() >= MIN_FREE_SPACE)
     {
         usbd_ep_nak_set(usb_device, EP_DATA_OUT, 0);
         forced_nak = false;
-    }
-}
-
-// Copy packet received via USB into circular buffer
-void usb_copy_received_packet()
-{
-    // Retrieve USB data
-    uint8_t packet[BULK_MAX_PACKET_SIZE] __attribute__((aligned(4)));
-    int len = usbd_ep_read_packet(usb_device, EP_DATA_OUT, packet, sizeof(packet));
-
-    int head = buf_head;
-
-    // copy first part (from head to end of circular buffer)
-    int n = std::min(len, BUF_SIZE - head);
-    memcpy(pixel_buf + head, packet, n);
-
-    // copy second part if needed (to start of circular buffer)
-    if (n < len)
-        memcpy(pixel_buf, packet + n, len - n);
-
-    // update head
-    head += len;
-    if (head >= BUF_SIZE)
-        head -= BUF_SIZE;
-    buf_head = head;
-}
-
-// Returns if there are at least `len` bytes of data in buffer
-bool circ_buf_has_data(int len)
-{
-    int head = buf_head;
-    int tail = buf_tail;
-
-    if (head >= tail)
-    {
-        return (head - tail) >= len;
-    }
-    else
-    {
-        return (BUF_SIZE - (tail - head)) >= len;
-    }
-}
-
-// Returns if there is space of at least `len` bytes to add new data
-bool circ_buf_has_avail(int len)
-{
-    int head = buf_head;
-    int tail = buf_tail;
-
-    if (head >= tail)
-    {
-        return (BUF_SIZE - (head - tail)) > len;
-    }
-    else
-    {
-        return (tail - head) > len;
     }
 }
 
@@ -185,22 +128,18 @@ int main()
 
     while (true)
     {
-        // check for sufficient data for entire line
-        if (!circ_buf_has_data(ROW_LEN))
+        // check for sufficient data for entire row
+        if (buffer.data_size() < ROW_LEN)
             continue;
 
-        // draw pixel line
-        display_draw(0, y, 128, 1, pixel_buf + buf_tail);
+        // draw pixel row
+        uint8_t row[ROW_LEN];
+        buffer.get_data(row, ROW_LEN);
+        display_draw(0, y, 128, 1, row);
 
         y++;
         if (y == 160)
             y = 0;
-
-        // update tail of circular buffer
-        int tail = buf_tail + ROW_LEN;
-        if (tail >= BUF_SIZE)
-            tail -= BUF_SIZE;
-        buf_tail = tail;
 
         usb_update_nak();
     }

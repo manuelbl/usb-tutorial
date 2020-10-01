@@ -44,7 +44,6 @@ void usb_init()
     rcc_periph_reset_pulse(RST_USB);
 
     // Pull USB D+ (A12) low for 80ms to trigger device reenumeration
-    // (hack for boards without proper USB pull up control)
     gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_10_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, GPIO12);
     gpio_clear(GPIOA, GPIO12);
     delay(80);
