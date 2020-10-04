@@ -85,7 +85,7 @@ int circ_buf_get_data(uint8_t *buf, int max_len)
         return len;
 
     // copy more data
-    return circ_buf_get_data(buf + len, max_len - len);
+    return circ_buf_get_data(buf + len, max_len - len) + len;
 }
 
 void circ_buf_add_data(const uint8_t *buf, int len)

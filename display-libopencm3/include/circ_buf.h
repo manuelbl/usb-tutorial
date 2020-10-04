@@ -135,7 +135,7 @@ int circ_buf<N>::get_data(uint8_t *buf, int max_len)
         return len;
 
     // copy more data
-    return get_data(buf + len, max_len - len);
+    return get_data(buf + len, max_len - len) + len;
 }
 
 template <int N>
